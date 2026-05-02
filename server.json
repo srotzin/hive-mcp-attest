@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.srotzin/hive-mcp-attest",
+  "description": "HiveAttest perimeter for autonomous agents — pre-action attestation, custody chains, cargo taxonomy, attestation-as-warranty, gate enforcement, secondary inspection, SMSH-Stamp verification, and cryptographic non-membership proofs. Every gate decision returns a signed C18 receipt; every response carries a Layer C honesty header.",
+  "title": "HiveAttest",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/srotzin/hive-mcp-attest",
+    "source": "github"
+  },
+  "websiteUrl": "https://thehiveryiq.com/#hiveattest-perimeter",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://hive-mcp-attest.onrender.com/mcp"
+    }
+  ]
+}
