@@ -1,0 +1,49 @@
+{
+  "name": "@hivecivilization/hive-mcp-attest",
+  "version": "1.0.0",
+  "description": "Umbrella MCP shim for HiveAttest — perimeter for autonomous agents. Exposes all C8/C12/C13/C15-C20 attestation primitives as MCP tools. Reference implementation of USPTO Provisional 64/055,601.",
+  "type": "module",
+  "main": "server.js",
+  "bin": {
+    "hive-mcp-attest": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "hive",
+    "hive-civilization",
+    "hiveattest",
+    "attestation",
+    "ed25519",
+    "jcs",
+    "passport",
+    "custody",
+    "cargo",
+    "warranty",
+    "gate",
+    "inspect",
+    "smsh",
+    "absence",
+    "agentic",
+    "ai-agent",
+    "ai-agents",
+    "autonomous-agents"
+  ],
+  "author": "Stephen A. Rotzin <steve@thehiveryiq.com> (https://www.thehiveryiq.com)",
+  "license": "MIT",
+  "homepage": "https://github.com/srotzin/hive-mcp-attest",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/srotzin/hive-mcp-attest"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

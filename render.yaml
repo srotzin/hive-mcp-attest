@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: hive-mcp-attest
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev --no-audit --no-fund
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HIVE_BASE
+        value: https://hivemorph.onrender.com
+    healthCheckPath: /health
+    autoDeploy: true
