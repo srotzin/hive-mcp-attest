@@ -535,8 +535,75 @@ app.get('/', (req, res) => {
 </html>`);
 });
 
-// ─── Start ────────────────────────────────────────────────────────────────────
+// ─── /llms.txt — agent discovery (llmstxt.org convention) ────────────────────
+app.get('/llms.txt', (req, res) => {
+  res.type('text/plain; charset=utf-8').send(`# HiveAttest MCP
+> MCP shim exposing the HiveAttest perimeter (C8/C12/C13/C15-C20) to autonomous agents.
 
+## What this is
+hive-mcp-attest is the Model Context Protocol server that wraps the HiveAttest
+attestation perimeter for autonomous agents. It exposes ${TOOLS.length} MCP tools covering
+Hive Layer C claims: C8 (gate), C12 (cargo), C13 (warranty), C15 (passport),
+C16 (custody), C17 (provenance), C18 (consent), C19 (redaction), C20 (epoch).
+Backend: ${HIVE_BASE}/v1/attest/*
+
+## Hive Civilization context
+hive-mcp-attest is one node in the Hive Civilization federation — a fleet of agent-facing
+microservices designed to be fully autonomous-agent navigable.
+This shim is a reference-grade implementation (wire format normative; production-grade is Layer B).
+Patent: ${PATENT}
+
+## Auth model
+- Free endpoints: GET /health, GET /llms.txt, GET /.well-known/mcp.json
+- MCP tool calls: POST /mcp (JSON-RPC 2.0, MCP 2024-11-05)
+- No x402 on the MCP transport itself; backend hivemorph enforces pricing per tool call
+- Backend settles to treasury 0x15184Bf50B3d3F52b60434f8942b7D52F2eB436E on Base in USDC or USDT
+- Solana rail: USDC to canonical Solana treasury address
+
+## Counter-offer / barter floor
+The backend 402 envelope returns \`amount_min_usd\`. Submit any value >= that floor.
+This shim relays the 402 back transparently so your agent can retry with payment.
+
+## Example flow — passport issuance + verification
+1. GET /health — verify MCP server is live
+2. POST /mcp { method: "tools/list" } — enumerate all ${TOOLS.length} attestation tools
+3. POST /mcp { method: "tools/call", params: { name: "attest_passport_issue", arguments: { action_id, agent_did, intended_op, target_resource } } }
+4. Receive signed passport manifest (Ed25519 over JCS, ttl_seconds default 300)
+5. POST /mcp { method: "tools/call", params: { name: "attest_passport_verify", arguments: { manifest } } }
+
+## Example flow — custody chain
+1. POST /mcp — call attest_custody_append to start a chain_id with transform_id + agent_did
+2. Append further transforms by reusing the same chain_id
+3. Call attest_custody_verify to audit the full chain; any tainted node propagates to all descendants
+
+## Key MCP tools
+- attest_passport_issue   — C15: Pre-Action Attestation Manifest (Ed25519/JCS)
+- attest_passport_verify  — C15: Verify passport signature + temporal validity
+- attest_custody_append   — C16: Append custody chain node (taint propagates)
+- attest_cargo_seal       — C12: Seal cargo with content hash
+- attest_warranty_issue   — C13: Issue warranty attestation
+- attest_consent_record   — C18: Record agent consent event
+- attest_epoch_checkpoint — C20: Epoch boundary checkpoint
+- gate_check              — C8:  Perimeter gate check
+
+## Sister services
+- HiveBank  (vaults + payments):  https://hivebank.onrender.com/llms.txt
+- HiveGate  (auth + onboarding):  https://hivegate.onrender.com/llms.txt
+- HiveOrigin (routing + egress):  https://hiveorigin.onrender.com/llms.txt
+- HiveMorph (morphing + attest):  https://hivemorph.onrender.com/llms.txt
+- HiveTrust (KYA + trust scores): https://hivetrust.onrender.com/llms.txt
+- HiveLens  (observability):      https://hivelens.onrender.com/llms.txt
+- HiveMining MCP:                 https://hive-mcp-mining.onrender.com/llms.txt
+
+## License + brand
+License: MIT
+Brand color: gold #FFB800
+Treasury: 0x15184Bf50B3d3F52b60434f8942b7D52F2eB436E (Base USDC/USDT)
+Last updated: 2026-05-02
+`);
+});
+
+// ─── Start ──────────────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`HiveAttest MCP Server running on :${PORT}`);
   console.log(`  Backend : ${HIVE_BASE}`);
