@@ -604,6 +604,66 @@ Last updated: 2026-05-02
 });
 
 // ─── Start ──────────────────────────────────────────────────────────────────────────────
+// === Slippery-sticky discovery surfaces (free, never gated) ===
+
+app.get('/robots.txt', (_req, res) => {
+  res.set('Content-Type', 'text/plain; charset=utf-8');
+  res.send('User-agent: *\nAllow: /\nSitemap: https://hive-mcp-attest.onrender.com/sitemap.xml\n');
+});
+
+app.get('/sitemap.xml', (_req, res) => {
+  const base = 'https://hive-mcp-attest.onrender.com';
+  const paths = ['/', '/health', '/llms.txt', '/openapi.json',
+                 '/.well-known/agent.json', '/.well-known/mcp.json'];
+  const urls = paths.map(p => `  <url><loc>${base}${p}</loc></url>`).join('\n');
+  res.set('Content-Type', 'application/xml; charset=utf-8');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
+});
+
+const FAVICON_PNG = Buffer.from(
+  '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489' +
+  '0000000d49444154789c626001000000050001' +
+  '0d0a2db40000000049454e44ae426082',
+  'hex',
+);
+app.get('/favicon.ico', (_req, res) => {
+  res.set('Content-Type', 'image/png');
+  res.send(FAVICON_PNG);
+});
+
+app.get('/openapi.json', (_req, res) => {
+  res.json({
+    openapi: '3.1.0',
+    info: {
+      title: 'HiveAttest MCP',
+      version: VERSION,
+      description: 'MCP shim for HiveAttest perimeter primitives. Full backend spec at https://hivemorph.onrender.com/openapi.json',
+    },
+    servers: [{ url: 'https://hive-mcp-attest.onrender.com' }],
+    paths: {
+      '/mcp': { post: { summary: 'MCP JSON-RPC 2.0 endpoint' } },
+      '/health': { get: { summary: 'Health' } },
+      '/llms.txt': { get: { summary: 'Agent discovery (llmstxt.org)' } },
+    },
+    'x-upstream': 'https://hivemorph.onrender.com/openapi.json',
+  });
+});
+
+// Slippery catch-all — every miss is a lead, never a closed door.
+app.use((req, res) => {
+  res.status(200).json({
+    hint: 'unknown_path',
+    you_asked_for: req.path,
+    try: ['/', '/health', '/llms.txt', '/openapi.json',
+          '/.well-known/agent.json', '/.well-known/mcp.json', '/mcp'],
+    docs: 'https://hive-mcp-attest.onrender.com/llms.txt',
+    upstream: 'https://hivemorph.onrender.com/llms.txt',
+    onboard: 'https://thehiveryiq.com/onboard.html',
+    contact: 'steve@thehiveryiq.com',
+    doctrine: 'slippery-sticky — every door 200s, every miss is a lead',
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`HiveAttest MCP Server running on :${PORT}`);
   console.log(`  Backend : ${HIVE_BASE}`);
