@@ -1,7 +1,7 @@
 {
   "name": "@hivecivilization/hive-mcp-attest",
   "version": "1.0.0",
-  "description": "Umbrella MCP shim for HiveAttest — perimeter for autonomous agents. Exposes all C8/C12/C13/C15-C20 attestation primitives as MCP tools. Reference implementation of USPTO Provisional 64/055,601.",
+  "description": "Umbrella MCP shim for HiveAttest \u2014 perimeter for autonomous agents. Exposes all C8/C12/C13/C15-C20 attestation primitives as MCP tools. Reference implementation of USPTO Provisional 64/055,601.",
   "type": "module",
   "main": "server.js",
   "bin": {
@@ -44,6 +44,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "@noble/ed25519": "^2.1.0"
   }
 }
