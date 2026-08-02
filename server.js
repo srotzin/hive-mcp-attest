@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * HiveAttest MCP Server — umbrella shim for autonomous-agent perimeter.
+ * HiveAttest MCP Server: umbrella shim for autonomous-agent perimeter.
  *
  * Exposes all HiveAttest primitives (C8/C12/C13/C15-C20) as MCP tools,
  * proxying to the hivemorph backend.
@@ -45,13 +45,35 @@ const SERVICE = 'hive-mcp-attest';
 const VERSION = '1.0.0';
 const HONESTY_SUFFIX = 'Reference-grade implementation. Wire format normative; production-grade is Layer B.';
 
+// ─── Environment validation (fail closed) ──────────────────────────────────
+function validateEnv() {
+  const errors = [];
+  try {
+    const u = new URL(HIVE_BASE);
+    if (!/^https?:$/.test(u.protocol)) errors.push(`HIVE_BASE must be http(s): got "${HIVE_BASE}"`);
+  } catch {
+    errors.push(`HIVE_BASE is not a valid URL: "${HIVE_BASE}"`);
+  }
+  const portNum = Number(PORT);
+  if (!Number.isInteger(portNum) || portNum <= 0 || portNum > 65535) {
+    errors.push(`PORT must be a valid TCP port: got "${PORT}"`);
+  }
+  return errors;
+}
+const ENV_ERRORS = validateEnv();
+if (ENV_ERRORS.length > 0) {
+  console.error(`[${SERVICE}] FATAL: invalid environment, refusing to start:`);
+  for (const e of ENV_ERRORS) console.error(`  - ${e}`);
+  process.exit(1);
+}
+
 // ─── Tool definitions ─────────────────────────────────────────────────────────
 
 const TOOLS = [
   // ── C15 ── Passport
   {
     name: 'attest_passport_issue',
-    description: `Issue a Pre-Action Attestation Manifest (C15 — hive-passport). Signs with Ed25519 over RFC 8785 JCS-canonical body. ${HONESTY_SUFFIX}`,
+    description: `Issue a Pre-Action Attestation Manifest (C15: hive-passport). Signs with Ed25519 over RFC 8785 JCS-canonical body. ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['action_id', 'agent_did', 'intended_op', 'target_resource'],
@@ -67,7 +89,7 @@ const TOOLS = [
   },
   {
     name: 'attest_passport_verify',
-    description: `Verify a Pre-Action Attestation Manifest (C15 — hive-passport). Checks Ed25519 signature, temporal validity, and optionally observed inputs hash. ${HONESTY_SUFFIX}`,
+    description: `Verify a Pre-Action Attestation Manifest (C15: hive-passport). Checks Ed25519 signature, temporal validity, and optionally observed inputs hash. ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['manifest'],
@@ -81,7 +103,7 @@ const TOOLS = [
   // ── C16 ── Custody
   {
     name: 'attest_custody_append',
-    description: `Append a node to a custody chain (C16 — hive-custody). Taint propagates: once tainted, always tainted. ${HONESTY_SUFFIX}`,
+    description: `Append a node to a custody chain (C16: hive-custody). Taint propagates: once tainted, always tainted. ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['chain_id', 'transform_id', 'agent_did'],
@@ -121,7 +143,7 @@ const TOOLS = [
   // ── C17 ── Cargo
   {
     name: 'attest_cargo_register',
-    description: `Register a versioned cargo type in the HiveAttest registry (C17 — hive-cargo-taxonomy). Pins a definition hash for version-anchoring. ${HONESTY_SUFFIX}`,
+    description: `Register a versioned cargo type in the HiveAttest registry (C17: hive-cargo-taxonomy). Pins a definition hash for version-anchoring. ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['id', 'name', 'version', 'sensitivity', 'schema'],
@@ -157,7 +179,7 @@ const TOOLS = [
   // ── C18 ── Warranty
   {
     name: 'attest_warranty_issue',
-    description: `Issue an attestation warranty committing an agent to a claim (C18 — hive-attestation-warranty). Signed with Ed25519. ${HONESTY_SUFFIX}`,
+    description: `Issue an attestation warranty committing an agent to a claim (C18: hive-attestation-warranty). Signed with Ed25519. ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['agent_did', 'action_id', 'claim'],
@@ -198,7 +220,7 @@ const TOOLS = [
   // ── C19 ── Gate (HEADLINE TOOL)
   {
     name: 'attest_gate_evaluate',
-    description: `THE HEADLINE TOOL. Evaluate whether an agent may proceed through the HiveAttest gate (C19 — hive-gate-enforcer). Verifies passport signature + expiry, cargo registry membership, and warranty status. Every response (allow OR deny) includes a signed C18-format receipt of the gate decision. ${HONESTY_SUFFIX}`,
+    description: `THE HEADLINE TOOL. Evaluate whether an agent may proceed through the HiveAttest gate (C19: hive-gate-enforcer). Verifies passport signature + expiry, cargo registry membership, and warranty status. Every response (allow OR deny) includes a signed C18-format receipt of the gate decision. ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['passport_manifest'],
@@ -215,14 +237,14 @@ const TOOLS = [
   // ── C20 ── Inspect
   {
     name: 'attest_inspect_sample',
-    description: `Probabilistic secondary inspection of a record batch (C20 — hive-secondary-inspection). Returns a signed inspection record. ${HONESTY_SUFFIX}`,
+    description: `Probabilistic secondary inspection of a record batch (C20: hive-secondary-inspection). Returns a signed inspection record. ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['sample_id', 'records'],
       properties: {
         sample_id:   { type: 'string', description: 'Identifier for the sample batch' },
         records:     { type: 'array', description: 'Records to probabilistically inspect' },
-        sample_rate: { type: 'number', minimum: 0, maximum: 1, default: 0.1, description: 'Fraction to inspect (0.0–1.0)' },
+        sample_rate: { type: 'number', minimum: 0, maximum: 1, default: 0.1, description: 'Fraction to inspect (0.0 to 1.0)' },
         seed:        { type: 'integer', description: 'Optional RNG seed for reproducibility' },
       },
     },
@@ -231,7 +253,7 @@ const TOOLS = [
   // ── C8/C12 ── SMSH
   {
     name: 'attest_smsh_verify',
-    description: `Verify a SMSH-Stamp v1 receipt (C8/C12 — smsh-stamp-verifier). Validates schema, version, algorithm, timestamp, and Ed25519 signature. ${HONESTY_SUFFIX}`,
+    description: `Verify a SMSH-Stamp v1 receipt (C8/C12: smsh-stamp-verifier). Validates schema, version, algorithm, timestamp, and Ed25519 signature. ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['receipt'],
@@ -246,7 +268,7 @@ const TOOLS = [
   // ── C13 ── Absence
   {
     name: 'attest_absence_build',
-    description: `Build a sorted Merkle tree for an audit window — enables cryptographic non-membership proofs (C13 — prov-absence). ${HONESTY_SUFFIX}`,
+    description: `Build a sorted Merkle tree for an audit window (enables cryptographic non-membership proofs, C13: prov-absence). ${HONESTY_SUFFIX}`,
     inputSchema: {
       type: 'object',
       required: ['window_id', 'events'],
@@ -450,7 +472,7 @@ app.post('/mcp', async (req, res) => {
             serverInfo: {
               name: SERVICE,
               version: VERSION,
-              description: `HiveAttest umbrella MCP shim — perimeter for autonomous agents. Covers ${PATENT} claims C8/C12/C13/C15-C20.`,
+              description: `HiveAttest umbrella MCP shim: perimeter for autonomous agents. Covers ${PATENT} claims C8/C12/C13/C15-C20.`,
             },
           },
         });
@@ -521,7 +543,7 @@ app.get('/', (req, res) => {
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>hive-mcp-attest · HiveAttest perimeter for autonomous agents</title>
-  <meta name="description" content="Umbrella MCP shim for HiveAttest — perimeter for autonomous agents. ${PATENT} claims C8/C12/C13/C15-C20."/>
+  <meta name="description" content="Umbrella MCP shim for HiveAttest: perimeter for autonomous agents. ${PATENT} claims C8/C12/C13/C15-C20."/>
   <style>
     body { font-family: system-ui, sans-serif; background: #0a0a0a; color: #f0f0f0; max-width: 800px; margin: 40px auto; padding: 0 20px; }
     h1 { color: ${BRAND_GOLD}; }
@@ -551,7 +573,7 @@ app.get('/', (req, res) => {
 </html>`);
 });
 
-// ─── /llms.txt — agent discovery (llmstxt.org convention) ────────────────────
+// ─── /llms.txt: agent discovery (llmstxt.org convention) ────────────────────
 app.get('/llms.txt', (req, res) => {
   res.type('text/plain; charset=utf-8').send(`# HiveAttest MCP
 > MCP shim exposing the HiveAttest perimeter (C8/C12/C13/C15-C20) to autonomous agents.
@@ -564,7 +586,7 @@ C16 (custody), C17 (provenance), C18 (consent), C19 (redaction), C20 (epoch).
 Backend: ${HIVE_BASE}/v1/attest/*
 
 ## Hive Civilization context
-hive-mcp-attest is one node in the Hive Civilization federation — a fleet of agent-facing
+hive-mcp-attest is one node in the Hive Civilization federation, a fleet of agent-facing
 microservices designed to be fully autonomous-agent navigable.
 This shim is a reference-grade implementation (wire format normative; production-grade is Layer B).
 Patent: ${PATENT}
@@ -580,27 +602,27 @@ Patent: ${PATENT}
 The backend 402 envelope returns \`amount_min_usd\`. Submit any value >= that floor.
 This shim relays the 402 back transparently so your agent can retry with payment.
 
-## Example flow — passport issuance + verification
-1. GET /health — verify MCP server is live
-2. POST /mcp { method: "tools/list" } — enumerate all ${TOOLS.length} attestation tools
+## Example flow: passport issuance + verification
+1. GET /health: verify MCP server is live
+2. POST /mcp { method: "tools/list" }: enumerate all ${TOOLS.length} attestation tools
 3. POST /mcp { method: "tools/call", params: { name: "attest_passport_issue", arguments: { action_id, agent_did, intended_op, target_resource } } }
 4. Receive signed passport manifest (Ed25519 over JCS, ttl_seconds default 300)
 5. POST /mcp { method: "tools/call", params: { name: "attest_passport_verify", arguments: { manifest } } }
 
-## Example flow — custody chain
-1. POST /mcp — call attest_custody_append to start a chain_id with transform_id + agent_did
+## Example flow: custody chain
+1. POST /mcp: call attest_custody_append to start a chain_id with transform_id + agent_did
 2. Append further transforms by reusing the same chain_id
 3. Call attest_custody_verify to audit the full chain; any tainted node propagates to all descendants
 
 ## Key MCP tools
-- attest_passport_issue   — C15: Pre-Action Attestation Manifest (Ed25519/JCS)
-- attest_passport_verify  — C15: Verify passport signature + temporal validity
-- attest_custody_append   — C16: Append custody chain node (taint propagates)
-- attest_cargo_seal       — C12: Seal cargo with content hash
-- attest_warranty_issue   — C13: Issue warranty attestation
-- attest_consent_record   — C18: Record agent consent event
-- attest_epoch_checkpoint — C20: Epoch boundary checkpoint
-- gate_check              — C8:  Perimeter gate check
+- attest_passport_issue   : C15: Pre-Action Attestation Manifest (Ed25519/JCS)
+- attest_passport_verify  : C15: Verify passport signature + temporal validity
+- attest_custody_append   : C16: Append custody chain node (taint propagates)
+- attest_cargo_seal       : C12: Seal cargo with content hash
+- attest_warranty_issue   : C13: Issue warranty attestation
+- attest_consent_record   : C18: Record agent consent event
+- attest_epoch_checkpoint : C20: Epoch boundary checkpoint
+- gate_check              : C8:  Perimeter gate check
 
 ## Sister services
 - HiveBank  (vaults + payments):  https://hivebank.onrender.com/llms.txt
@@ -665,18 +687,20 @@ app.get('/openapi.json', (_req, res) => {
   });
 });
 
-// Slippery catch-all — every miss is a lead, never a closed door.
+// Honest 404: unknown paths are not found. We still point callers at the
+// real, documented surface (helpful, not misleading), but we do not return
+// HTTP 200 for a path that doesn't exist. A 200 on a 404 is a fabricated
+// success and breaks any client that checks status codes.
 app.use((req, res) => {
-  res.status(200).json({
-    hint: 'unknown_path',
-    you_asked_for: req.path,
+  res.status(404).json({
+    error: 'not_found',
+    path: req.path,
+    service: SERVICE,
     try: ['/', '/health', '/llms.txt', '/openapi.json',
           '/.well-known/agent.json', '/.well-known/mcp.json', '/mcp'],
     docs: 'https://hive-mcp-attest.onrender.com/llms.txt',
     upstream: 'https://hivemorph.onrender.com/llms.txt',
-    onboard: 'https://thehiveryiq.com/onboard.html',
     contact: 'steve@thehiveryiq.com',
-    doctrine: 'slippery-sticky — every door 200s, every miss is a lead',
   });
 });
 

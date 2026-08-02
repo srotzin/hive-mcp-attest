@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# smoke.sh — HiveAttest MCP shim smoke test
+# smoke.sh: HiveAttest MCP shim smoke test
 #
 # Tests: /health, /.well-known/mcp.json, tools/list (≥19 tools),
 #        tools/call attest_meta, tools/call attest_passport_issue
@@ -34,7 +34,7 @@ info "Starting MCP server on :${PORT}…"
 fuser -k "${PORT}/tcp" 2>/dev/null || true
 
 NODE_CMD="node"
-command -v node >/dev/null 2>&1 || { echo "node not found — aborting"; exit 1; }
+command -v node >/dev/null 2>&1 || { echo "node not found, aborting"; exit 1; }
 
 # Install deps if needed
 if [ ! -d "${SCRIPT_DIR}/node_modules" ]; then
@@ -162,11 +162,25 @@ if echo "$PASSPORT_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); 
     ok "tools/call attest_passport_issue → manifest_id present in response"
   else
     STATUS=$(echo "$PASSPORT_TEXT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','?'))" 2>/dev/null || echo "?")
-    info "Backend status=${STATUS} (backend may be offline) — shim proxied correctly"
+    info "Backend status=${STATUS} (backend may be offline), shim proxied correctly"
     ok "tools/call attest_passport_issue → shim proxied correctly (status=${STATUS})"
   fi
 else
   fail "tools/call attest_passport_issue → no result in JSON-RPC response (shim error)"
+fi
+
+# ── test 6: honest 404 on unknown path ────────────────────────────────────────
+info "Test 6: honest 404 on unknown path"
+CODE=$(curl -s -o /tmp/attest404.json -w "%{http_code}" "${BASE}/totally-not-a-real-route")
+if [ "$CODE" = "404" ]; then
+  ok "GET /totally-not-a-real-route → 404"
+else
+  fail "GET unknown route → ${CODE} (expected 404, must not fabricate 200)"
+fi
+if grep -q '"error":"not_found"' /tmp/attest404.json; then
+  ok "404 body → honest not_found error"
+else
+  fail "404 body missing honest error field"
 fi
 
 # ── summary ───────────────────────────────────────────────────────────────────
