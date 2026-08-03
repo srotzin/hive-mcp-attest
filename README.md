@@ -30,7 +30,7 @@
 
 Reference implementation of **USPTO Provisional 64/055,601** — HiveAttest claims C8/C12/C13/C15-C20.
 
-**Inventor:** Stephen A. Rotzin, 170 Greenway Dr, Walnut Creek CA 94596
+**Inventor:** Stephen A. Rotzin
 
 ---
 
@@ -154,7 +154,7 @@ All attestation primitives use:
 
 Reference implementation of **USPTO Provisional 64/055,601** — HiveAttest claims C8/C12/C13/C15-C20.
 
-Inventor: Stephen A. Rotzin, 170 Greenway Dr, Walnut Creek CA 94596. Filed May 2 2026.
+Inventor: Stephen A. Rotzin. Filed May 2 2026.
 
 ---
 

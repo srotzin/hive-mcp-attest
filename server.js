@@ -13,7 +13,7 @@
  * Patent:    USPTO Provisional 64/055,601
  *
  * Copyright 2026 Stephen A. Rotzin, Hive Civilization.
- * Inventor: Stephen A. Rotzin, 170 Greenway Dr, Walnut Creek CA 94596.
+ * Inventor: Stephen A. Rotzin.
  */
 
 import express from 'express';
@@ -431,7 +431,7 @@ async function executeTool(name, args) {
           layer: 'C',
           production_grade: false,
           patent: PATENT,
-          inventor: 'Stephen A. Rotzin, 170 Greenway Dr, Walnut Creek CA 94596',
+          inventor: 'Stephen A. Rotzin',
           claims: {
             'C8':  { primitive: 'smsh',    spec: 'https://github.com/srotzin/smsh-stamp-verifier/blob/main/SPEC.md' },
             'C12': { primitive: 'smsh',    spec: 'https://github.com/srotzin/smsh-stamp-verifier/blob/main/SPEC.md' },
@@ -568,7 +568,7 @@ app.get('/', (req, res) => {
   <p>MCP endpoint: <code>POST /mcp</code> (JSON-RPC 2.0, MCP 2024-11-05)</p>
   <hr/>
   <p><em>Reference-grade implementation. Wire format normative; production-grade is Layer B.</em></p>
-  <p>Inventor: Stephen A. Rotzin, 170 Greenway Dr, Walnut Creek CA 94596</p>
+  <p>Inventor: Stephen A. Rotzin</p>
 </body>
 </html>`);
 });
